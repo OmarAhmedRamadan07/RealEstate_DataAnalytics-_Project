@@ -6,10 +6,10 @@ import os
 # ==========================================
 # 1. Page Configuration
 # ==========================================
-st.set_page_config(page_title="SUT - Real Estate AI Advisor", layout="wide")
+st.set_page_config(page_title="SUT - NYC Real Estate Analytics", layout="wide")
 
 # ==========================================
-# 2. Data Loading & Benchmarking
+# 2. Data Loading
 # ==========================================
 @st.cache_data
 def load_data():
@@ -24,92 +24,118 @@ def load_data():
 df = load_data()
 
 if df is not None:
-    # Calculate global averages to use as benchmarks for new listings
+    # --- Pre-calculations for benchmarks ---
     global_avg_reviews = df['reviews_per_month'].mean()
     neighborhood_stats = df.groupby('neighbourhood_group')['price'].mean().to_dict()
 
     # ==========================================
-    # 3. New Feature: AI Strategy Simulator (Input Form)
-    # ==========================================
-    st.sidebar.divider()
-    st.sidebar.header("🏠 AI Listing Advisor")
-    st.sidebar.write("Enter new listing details to get a strategy:")
-    
-    with st.sidebar.form("prediction_form"):
-        new_name = st.text_input("Listing Name", "Cozy Apartment")
-        new_borough = st.selectbox("Borough", options=df['neighbourhood_group'].unique())
-        new_price = st.number_input("Price per Night ($)", min_value=10, max_value=1000, value=100)
-        new_nights = st.number_input("Minimum Nights", min_value=1, max_value=30, value=1)
-        new_reviews = st.number_input("Expected Reviews/Month", value=1.0)
-        
-        submit_btn = st.form_submit_button("Analyze Listing")
-
-    # ==========================================
-    # 4. Main Dashboard Header
+    # 3. TOP SECTION: Main Market Metrics (KPIs)
     # ==========================================
     st.title("🏙️ NYC Real Estate Market Optimization")
+    st.markdown("### Market Summary Overview")
     
-    if submit_btn:
-        st.header(f"📊 Strategy Diagnosis for: {new_name}")
-        
-        # Retrieve the average price for the selected borough (default to 100 if not found)
-        avg_price_in_area = neighborhood_stats.get(new_borough, 100)
-        
-        col_res1, col_res2 = st.columns(2)
-        
-        with col_res1:
-            st.write(f"**Selected Borough:** {new_borough}")
-            st.write(f"**Your Price:** ${new_price} (Area Avg: ${avg_price_in_area:.2f})")
-            st.write(f"**Minimum Nights:** {new_nights}")
-        
-        with col_res2:
-            if new_price > (avg_price_in_area * 1.2) and new_reviews < global_avg_reviews:
-                st.error("⚠️ Problem: High Price. \n\n**Recommendation:** Lower your price to match the neighborhood average and increase demand.")
-            elif new_nights > 3:
-                st.warning("⚠️ Problem: High Entry Barrier. \n\n**Recommendation:** Reduce minimum nights to 1 or 2 to attract more short-stay travelers.")
-            elif new_price <= avg_price_in_area and new_reviews < (global_avg_reviews * 0.5):
-                st.info("💡 Opportunity: Price is Good, but engagement is low. \n\n**Recommendation:** Your price is competitive. Improve your photos and description to attract more bookings.")
-            else:
-                st.success("✅ Perfect Strategy! \n\n**Status:** Your listing parameters are optimal and highly competitive for the current market.")
-        
-        st.divider()
-
-    # ==========================================
-    # 5. Global Market Overview 
-    # ==========================================
-    st.subheader("📈 Market Overview (Based on 45,840 Listings)")
-    
-    col1, col2, col3, col4 = st.columns(4)
-    with col1: 
-        st.metric("Total Market Volume", f"{len(df):,}")
-    with col2: 
+    # Five key statistics at the top
+    kpi1, kpi2, kpi3, kpi4, kpi5 = st.columns(5)
+    with kpi1:
+        st.metric("Total Listings", f"{len(df):,}")
+    with kpi2:
         st.metric("Market Avg Price", f"${df['price'].mean():.2f}")
-    with col3:
+    with kpi3:
         st.metric("Avg Reviews/Month", f"{global_avg_reviews:.2f}")
-    with col4:
-        st.metric("Avg Occupancy Score", f"{df['occupancy_score'].mean():.1f}%")
+    with kpi4:
+        st.metric("Occupancy Score", f"{df['occupancy_score'].mean():.1f}%")
+    with kpi5:
+        st.metric("Neighborhoods", f"{df['neighbourhood'].nunique()}")
+
+    st.divider()
+
+    # ==========================================
+    # 4. MIDDLE SECTION: Market Charts
+    # ==========================================
+    col_chart1, col_chart2 = st.columns(2)
     
-    left_col, right_col = st.columns(2)
-
-    with left_col:
-        st.write("**Overall Market Strategy Distribution**")
-        fig_pie = px.pie(
-            df, 
-            names='final_recommendation', 
-            hole=0.4, 
-            color_discrete_sequence=px.colors.qualitative.Pastel
-        )
+    with col_chart1:
+        st.subheader("Strategy Distribution")
+        fig_pie = px.pie(df, names='final_recommendation', hole=0.4, 
+                         color_discrete_sequence=px.colors.qualitative.Pastel)
         st.plotly_chart(fig_pie, use_container_width=True)
-
-    with right_col:
-        st.write("**Price Distribution by Borough**")
-        fig_box = px.box(
-            df, 
-            x="neighbourhood_group", 
-            y="price", 
-            color="neighbourhood_group"
-        )
+        
+    with col_chart2:
+        st.subheader("Price Range by Borough")
+        fig_box = px.box(df, x="neighbourhood_group", y="price", color="neighbourhood_group")
         st.plotly_chart(fig_box, use_container_width=True)
 
+    st.divider()
+
+    # ==========================================
+    # 5. BOTTOM SECTION: Advanced Filters & Search
+    # ==========================================
+    st.header("⚙️ Data Exploration & Criteria Selection")
+    
+    # Filter selection area in columns
+    f1, f2, f3 = st.columns(3)
+    
+    with f1:
+        selected_borough = st.multiselect("Borough Filter", 
+                                          options=df['neighbourhood_group'].unique(), 
+                                          default=df['neighbourhood_group'].unique())
+    with f2:
+        selected_room = st.multiselect("Room Type Filter", 
+                                       options=df['room_type'].unique(), 
+                                       default=df['room_type'].unique())
+    with f3:
+        price_range = st.slider("Price Range ($)", 
+                                int(df['price'].min()), int(df['price'].max()), 
+                                (int(df['price'].min()), int(df['price'].max())))
+
+    # Applying the filters to the data
+    filtered_df = df[
+        (df['neighbourhood_group'].isin(selected_borough)) & 
+        (df['room_type'].isin(selected_room)) &
+        (df['price'].between(price_range[0], price_range[1]))
+    ]
+
+    st.success(f"Found {len(filtered_df):,} listings matching your selected criteria.")
+
+    # ==========================================
+    # 6. AI LISTING ADVISOR (Detailed Tool)
+    # ==========================================
+    st.divider()
+    st.header("🔍 Individual Listing Diagnosis & AI Advisor")
+    
+    tab1, tab2 = st.tabs(["Analyze Existing Listing", "Simulate New Listing Strategy"])
+    
+    with tab1:
+        # Search existing data
+        search_listing = st.selectbox("Select an Apartment Name to Diagnose:", 
+                                       options=filtered_df['name'].unique()[:500]) # Limited to 500 for speed
+        if search_listing:
+            listing_row = filtered_df[filtered_df['name'] == search_listing].iloc[0]
+            st.info(f"**Host:** {listing_row['host_name']} | **Current Strategy:** {listing_row['final_recommendation']}")
+            st.write(f"The recommended action for this listing is: **{listing_row['final_recommendation']}**")
+
+    with tab2:
+        # Input new data (Advisor)
+        with st.form("new_listing_form"):
+            c1, c2 = st.columns(2)
+            with c1:
+                in_name = st.text_input("Apartment Name", "New Listing")
+                in_borough = st.selectbox("Target Borough", options=df['neighbourhood_group'].unique())
+                in_price = st.number_input("Price ($)", value=100)
+            with c2:
+                in_nights = st.number_input("Min Nights", value=1)
+                in_reviews = st.number_input("Expected Monthly Reviews", value=1.0)
+            
+            submit = st.form_submit_button("Run AI Strategy Analysis")
+            
+            if submit:
+                target_avg = neighborhood_stats.get(in_borough, 100)
+                if in_price > (target_avg * 1.2):
+                    st.error(f"Strategy: **Lower Price**. (Area Avg is ${target_avg:.2f})")
+                elif in_nights > 3:
+                    st.warning("Strategy: **Reduce Minimum Nights** to improve visibility.")
+                else:
+                    st.success("Strategy: **Optimal**. Your parameters are competitive.")
+
 else:
-    st.error("🚨 Error: The dataset file 'airbnb_recommendations_report.csv' was not found.")
+    st.error("🚨 Dataset not found. Please upload 'airbnb_recommendations_report.csv'.")
