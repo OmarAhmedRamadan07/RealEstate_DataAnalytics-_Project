@@ -61,7 +61,7 @@ if df is not None:
     with col_chart1:
         st.subheader("Strategy Distribution")
         fig_pie = px.pie(df, names='final_recommendation', hole=0.4, 
-                         color_discrete_sequence=px.colors.qualitative.Pastel)
+                            color_discrete_sequence=px.colors.qualitative.Pastel)
         st.plotly_chart(fig_pie, use_container_width=True)
         
     with col_chart2:
@@ -80,12 +80,12 @@ if df is not None:
     
     with f1:
         selected_borough = st.multiselect("Borough Filter", 
-                                          options=df['neighbourhood_group'].unique(), 
-                                          default=df['neighbourhood_group'].unique())
+                                            options=df['neighbourhood_group'].unique(), 
+                                            default=df['neighbourhood_group'].unique())
     with f2:
         selected_room = st.multiselect("Room Type Filter", 
-                                       options=df['room_type'].unique(), 
-                                       default=df['room_type'].unique())
+                                        options=df['room_type'].unique(), 
+                                        default=df['room_type'].unique())
     with f3:
         price_range = st.slider("Price Range ($)", 
                                 int(df['price'].min()), int(df['price'].max()), 
