@@ -58,5 +58,4 @@ We transition from basic descriptive statistics to prescriptive analytics by int
 ## 💻 How to Run the Dashboard Locally
 
 1. Clone this repository to your local machine:
-   ```bash
-   git clone [https://github.com/your-username/realestate_dataanalytics-_project.git](https://github.com/your-username/realestate_dataanalytics-_project.git)
+   https://realestatedataanalytics-project-dwjjnj3hatsuddlj5haqjk.streamlit.app/
