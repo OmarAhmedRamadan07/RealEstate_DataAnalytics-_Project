@@ -13,15 +13,15 @@ st.set_page_config(page_title="NYC Real Estate Optimization", layout="wide")
 # ==========================================
 @st.cache_data
 def load_data():
-    file_name = "airbnb_recommendations_report.csv"
+    # ده السطر السحري اللي بيجبر الكود يدور في نفس الفولدر اللي هو جواه
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    file_path = os.path.join(current_dir, "airbnb_recommendations_report.csv")
     
-    # Check if the file exists before trying to read it
-    if not os.path.exists(file_name):
-        st.error(f"🚨 Error: The file '{file_name}' was not found!")
-        st.warning("Please make sure you uploaded the CSV file to the exact same folder as this app.py file on GitHub.")
+    if not os.path.exists(file_path):
+        st.error(f"🚨 Error: The file was not found!")
         return None
         
-    return pd.read_csv(file_name)
+    return pd.read_csv(file_path)
 
 df = load_data()
 
